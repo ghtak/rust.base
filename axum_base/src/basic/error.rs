@@ -1,6 +1,6 @@
 use crate::basic::extract::Json;
 use axum::{
-    extract::rejection::{JsonRejection, PathRejection},
+    extract::rejection::{FormRejection, JsonRejection, PathRejection},
     http::StatusCode,
     response::IntoResponse,
 };
@@ -24,6 +24,12 @@ pub enum Error {
 
     #[error(transparent)]
     PathRejection(#[from] PathRejection),
+
+    // #[error(transparent)]
+    // ValidationError(#[from] validator::ValidationErrors),
+
+    #[error(transparent)]
+    AxumFormRejection(#[from] FormRejection),
 
     #[error("app error status: {0} error_code: {1} message: {2}")]
     AppError(StatusCode, String, String),

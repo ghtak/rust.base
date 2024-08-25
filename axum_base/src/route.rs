@@ -4,21 +4,24 @@ use utoipa::
     OpenApi
 ;
 
-use crate::{basic::{error::Error, state::State}, sample};
+use crate::{basic::{error::Error, state::BasicState}, oauth2sample, sample};
 use utoipa_swagger_ui::SwaggerUi;
 
 #[derive(OpenApi)]
 #[openapi(info(description = "Basic Api description"))]
 struct BasicApiDoc;
 
-pub fn router(state: State) -> Router {
+pub fn router(state: BasicState) -> Router {
     let mut api_doc = BasicApiDoc::openapi();
+
     api_doc.merge(sample::Api::openapi());
+    api_doc.merge(oauth2sample::Api::openapi());
 
     let router = Router::new()
         .route("/helloworld", get(hello_world))
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", api_doc))
         .merge(sample::router())
+        .merge(oauth2sample::router())
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
         .fallback(handle_404)

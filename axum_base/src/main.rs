@@ -1,14 +1,15 @@
-use basic::{env::Env, state::State};
+use basic::{env::Env, state::BasicState};
 
 mod basic;
 mod route;
 mod sample;
+mod oauth2sample;
 
 #[tokio::main]
 async fn main() {
     let env = Env::new("dev.toml");
     basic::tracing::init(&env);
-    let state = State::new(&env);
+    let state = BasicState::new(&env);
     let router = route::router(state);
     let listener = tokio::net::TcpListener::bind(env.server.address.as_str())
         .await
