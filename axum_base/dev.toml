@@ -1,0 +1,9 @@
+profile="dev"
+
+[server]
+address="0.0.0.0:18080"
+
+[tracing]
+max_level="TRACE"
+directory="./logs"
+with_file=false

@@ -1,6 +1,6 @@
-mod internal;
+
 
 fn main() {
-    internal::diag::init_tracing().unwrap();
+    tracing_subscriber::fmt().init();
     tracing::info!("Hello Client!");
 }
