@@ -1,4 +1,4 @@
-use axum::{http::StatusCode, response::IntoResponse, Router};
+use axum::{http::StatusCode, response::Html, routing::get, Router};
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use utoipa::
     OpenApi
@@ -16,6 +16,7 @@ pub fn router(state: State) -> Router {
     api_doc.merge(sample::Api::openapi());
 
     let router = Router::new()
+        .route("/helloworld", get(hello_world))
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", api_doc))
         .merge(sample::router())
         .layer(CorsLayer::permissive())
@@ -31,4 +32,8 @@ async fn handle_404() -> Error {
         StatusCode::NOT_FOUND, 
         "404".to_owned(), 
         "nothing to see here".to_owned())
+}
+
+async fn hello_world() -> Html<&'static str> {
+    Html("<h1>Hello, World!</h1>")
 }
