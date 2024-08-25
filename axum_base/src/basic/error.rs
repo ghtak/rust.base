@@ -4,10 +4,10 @@ use axum::{
     http::StatusCode,
     response::IntoResponse,
 };
-use serde::Serialize;
 use serde_json::json;
 use thiserror::Error;
 
+#[allow(dead_code)]
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("unknown error {0}")]
@@ -41,7 +41,7 @@ impl IntoResponse for Error {
             Error::AppError(s, e, m) => (s, e, m),
             _ => (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                "9999".to_owned(),
+                "500".to_owned(),
                 format!("{:?}", self),
             ),
         };

@@ -5,7 +5,10 @@ use utoipa::{OpenApi, ToSchema};
 use crate::basic::{self, extract::{Json, Path}};
 
 #[derive(OpenApi)]
-#[openapi(paths(sample_post),components(schemas(Sample)))]
+#[openapi(
+    paths(sample_post, sample_path),
+    components(schemas(Sample))
+)]
 pub(super) struct Api;
 
 pub fn router() -> Router<basic::state::State> {
@@ -35,6 +38,14 @@ struct SampleParams {
     team_id: u32,
 }
 
+#[utoipa::path(
+    get,
+    path="/sample/{user_id}/teams/{team_id}",
+    params(
+        ("user_id", description = "user_id"),
+        ("team_id", description = "team_id"),
+    )
+)]
 async fn sample_path(Path(sp): Path<SampleParams>) -> impl IntoResponse {
     axum::Json(sp)
 }
