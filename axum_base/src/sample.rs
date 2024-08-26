@@ -7,8 +7,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::{OpenApi, ToSchema};
 
 use crate::basic::{
-    extract::{Json, Path}, state::BasicState,
-};
+    extract::{Json, Path}, state::BasicState};
 
 #[derive(OpenApi)]
 #[openapi(paths(sample_post, sample_path), components(schemas(Sample)))]

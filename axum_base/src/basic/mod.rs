@@ -3,6 +3,8 @@ pub mod error;
 pub mod extract;
 pub mod state;
 pub mod tracing;
+pub mod db;
+
 
 #[allow(dead_code)]
 pub type Result<T> = core::result::Result<T, error::Error>;

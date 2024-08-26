@@ -7,3 +7,12 @@ address="0.0.0.0:18080"
 max_level="TRACE"
 directory="./logs"
 with_file=false
+
+[database]
+sources = [
+    { url = "sqlite://sqlite.db?mode=rwc" , max_connections=5 }
+]
+replicas = [
+    { url = "sqlite://sqlite.db" , max_connections=5 },
+    { url = "sqlite://sqlite.db" , max_connections=5 }
+]

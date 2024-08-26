@@ -25,6 +25,9 @@ pub enum Error {
     #[error(transparent)]
     PathRejection(#[from] PathRejection),
 
+    #[error(transparent)]
+    SqlxError(#[from] sqlx::Error),
+
     // #[error(transparent)]
     // ValidationError(#[from] validator::ValidationErrors),
 
