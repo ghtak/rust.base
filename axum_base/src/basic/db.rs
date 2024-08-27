@@ -1,55 +1,19 @@
-use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 
-use super::env::Env;
+use super::env::{DatabaseConnection, Env};
+use super::roundrobin::RoundRobin;
 use super::Result;
 
 #[derive(Debug)]
-struct RoundRobinDatabase<DB: sqlx::Database> {
-    database: Vec<sqlx::Pool<DB>>,
-    index: AtomicUsize,
-}
-
-impl<DB> RoundRobinDatabase<DB>
-where
-    DB: sqlx::Database,
-{
-    pub fn new(databse: Vec<sqlx::Pool<DB>>) -> Self {
-        RoundRobinDatabase {
-            database: databse,
-            index: AtomicUsize::new(0),
-        }
-    }
-
-    pub fn next<'a>(&'a self) -> &'a sqlx::Pool<DB> {
-        let len = self.database.len();
-        if len == 1 {
-            return &self.database[0];
-        }
-        let mut current = self.index.load(std::sync::atomic::Ordering::Relaxed);
-        loop {
-            let mut next = current + 1;
-            if next >= len {
-                next = 0;
-            }
-            match self.index.compare_exchange_weak(
-                current,
-                next,
-                std::sync::atomic::Ordering::Acquire,
-                std::sync::atomic::Ordering::Relaxed,
-            ) {
-                Ok(_) => return &self.database[current],
-                Err(changed) => current = changed,
-            }
-        }
-    }
+struct BasicDatabaseInner<DB: sqlx::Database> {
+    sources: RoundRobin<sqlx::Pool<DB>>,
+    replicas: RoundRobin<sqlx::Pool<DB>>,
 }
 
 // derive(Clone) not works with generic fields
 #[derive(Debug)]
 pub struct BasicDatabase<DB: sqlx::Database> {
-    sources: Arc<RoundRobinDatabase<DB>>,
-    replicas: Arc<RoundRobinDatabase<DB>>,
+    inner: Arc<BasicDatabaseInner<DB>>,
 }
 
 impl<DB> BasicDatabase<DB>
@@ -64,14 +28,40 @@ where
         }
     }
 
-    pub fn read_pool(&self) -> &sqlx::Pool<DB> {
-        return self.replicas.next();
+    pub fn sources_pool(&self) -> sqlx::Pool<DB> {
+        self.inner.sources.next().clone()
     }
 
-    pub fn write_pool(&self) -> &sqlx::Pool<DB> {
-        return self.sources.next();
+    pub fn replicas_pool(&self) -> sqlx::Pool<DB> {
+        self.inner.replicas.next().clone()
+    }
+
+    pub fn clone_internal(&self) -> Self {
+        Self {
+            inner: self.inner.clone(),
+        }
     }
 }
+
+// pub trait Database {
+//     type Pool;
+//     fn sources_pool(&self) -> &Self::Pool;
+//     fn replicas_pool(&self) -> &Self::Pool;
+// }
+// impl<DB> Database for BasicDatabase<DB>
+// where
+//     DB: sqlx::Database,
+// {
+//     type Pool = sqlx::Pool<DB>;
+
+//     fn sources_pool(&self) -> &sqlx::Pool<DB> {
+//         return self.sources.next();
+//     }
+
+//     fn replicas_pool(&self) -> &sqlx::Pool<DB> {
+//         return self.replicas.next();
+//     }
+// }
 
 pub struct DatabaseBuilder<DB: sqlx::Database> {
     env: Env,
@@ -88,51 +78,34 @@ where
         self
     }
 
+    async fn _connect_db(
+        &self,
+        conn_infos: &Vec<DatabaseConnection>,
+    ) -> Result<Vec<sqlx::Pool<DB>>> {
+        let mut pools: Vec<sqlx::Pool<DB>> = Vec::new();
+        for conn_info in conn_infos.iter() {
+            pools.push(
+                sqlx::pool::PoolOptions::<DB>::new()
+                    .max_connections(conn_info.max_connections)
+                    .connect(&conn_info.url)
+                    .await?,
+            )
+        }
+        Ok(pools)
+    }
+
     pub async fn connect(mut self) -> Result<Self> {
-        let mut sources: Vec<sqlx::Pool<_>> = Vec::new();
-        for source in self.env.database.sources.iter() {
-            sources.push(
-                sqlx::pool::PoolOptions::<DB>::new()
-                    .max_connections(source.max_connections)
-                    .connect(&source.url)
-                    .await?,
-            )
-        }
-
-        let mut replicas: Vec<sqlx::Pool<_>> = Vec::new();
-        for replica in self.env.database.replicas.iter() {
-            replicas.push(
-                sqlx::pool::PoolOptions::<DB>::new()
-                    .max_connections(replica.max_connections)
-                    .connect(&replica.url)
-                    .await?,
-            )
-        }
-
-        self.sources = Some(sources);
-        self.replicas = Some(replicas);
-
+        self.sources = Some(self._connect_db(&self.env.database.sources).await?);
+        self.replicas = Some(self._connect_db(&self.env.database.replicas).await?);
         Ok(self)
     }
 
     pub fn build(self) -> BasicDatabase<DB> {
-        BasicDatabase::<DB> {
-            sources: Arc::new(RoundRobinDatabase::new(self.sources.unwrap())),
-            replicas: Arc::new(RoundRobinDatabase::new(self.replicas.unwrap())),
-        }
-    }
-}
-
-pub type Database = BasicDatabase<sqlx::Sqlite>;
-
-impl<DB> Clone for BasicDatabase<DB>
-where
-    DB: sqlx::Database,
-{
-    fn clone(&self) -> Self {
-        Self {
-            sources: self.sources.clone(),
-            replicas: self.replicas.clone(),
+        BasicDatabase {
+            inner: Arc::new(BasicDatabaseInner {
+                sources: RoundRobin::new(self.sources.unwrap()),
+                replicas: RoundRobin::new(self.replicas.unwrap()),
+            }),
         }
     }
 }

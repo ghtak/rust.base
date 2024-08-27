@@ -1,10 +1,11 @@
-use basic::{env::Env, state::BasicState};
+use app_state::{AppState, Database};
+use basic::env::Env;
 
+mod app_state;
 mod basic;
 mod oauth2sample;
 mod route;
 mod sample;
-
 
 #[tokio::main]
 async fn main() {
@@ -12,26 +13,14 @@ async fn main() {
     basic::tracing::init(&env);
     tracing::info!(val=32, env=?env);
 
-    let database = basic::db::Database::builder()
+    let database = Database::builder()
         .env(env.clone())
         .connect()
-        .await.expect("database build fail")
+        .await
+        .expect("database build fail")
         .build();
-    // let wp = database.write_pool();
-    // let wp2 = database.write_pool();
-    
-    // if std::ptr::eq(wp, wp2){
-    //     tracing::info!("Eq Pools {:?} {:?}", wp, wp2);
-    // }
 
-    // let rp = database.read_pool();
-    // let rp2 = database.read_pool();
-
-    // if std::ptr::eq(rp, rp2){
-    //     tracing::info!("Eq rPools {:?} {:?}", rp, rp2);
-    // }
-    
-    let state = BasicState::new(&env, database);
+    let state = AppState::new(database);
     let router = route::router(state);
     let listener = tokio::net::TcpListener::bind(env.server.address.as_str())
         .await

@@ -1,14 +1,13 @@
 use std::fs;
 
 use serde::{Deserialize, Serialize};
-use tracing::Value;
 
 #[derive(Deserialize, Debug, Serialize, Default, Clone)]
 pub struct Env {
     pub profile: String,
     pub server: Server,
     pub tracing: Tracing,
-    pub database: Database
+    pub database: Database,
 }
 
 impl Env {
@@ -20,7 +19,7 @@ impl Env {
 
 #[derive(Deserialize, Debug, Serialize, Default, Clone)]
 pub struct Server {
-    pub address: String
+    pub address: String,
 }
 
 #[derive(Deserialize, Debug, Serialize, Default, Clone)]
@@ -30,16 +29,14 @@ pub struct Tracing {
     pub with_file: bool,
 }
 
-
 #[derive(Deserialize, Debug, Serialize, Default, Clone)]
-pub struct DatabaseConnection{
+pub struct DatabaseConnection {
     pub url: String,
     pub max_connections: u32,
 }
 
-
 #[derive(Deserialize, Debug, Serialize, Default, Clone)]
-pub struct Database{
+pub struct Database {
     pub sources: Vec<DatabaseConnection>,
     pub replicas: Vec<DatabaseConnection>,
 }

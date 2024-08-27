@@ -6,14 +6,16 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use utoipa::{OpenApi, ToSchema};
 
-use crate::basic::{
-    extract::{Json, Path}, state::BasicState};
+use crate::{
+    app_state::AppState,
+    basic::extract::{Json, Path},
+};
 
 #[derive(OpenApi)]
 #[openapi(paths(sample_post, sample_path), components(schemas(Sample)))]
 pub(super) struct Api;
 
-pub fn router() -> Router<BasicState> {
+pub fn router() -> Router<AppState> {
     Router::new()
         .route("/sample/", post(sample_post))
         .route("/sample/:user_id/teams/:team_id", get(sample_path))

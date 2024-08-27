@@ -1,17 +1,15 @@
 use axum::{http::StatusCode, response::Html, routing::get, Router};
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
-use utoipa::
-    OpenApi
-;
+use utoipa::OpenApi;
 
-use crate::{basic::{error::Error, state::BasicState}, oauth2sample, sample};
+use crate::{app_state::AppState, basic::error::Error, oauth2sample, sample};
 use utoipa_swagger_ui::SwaggerUi;
 
 #[derive(OpenApi)]
 #[openapi(info(description = "Basic Api description"))]
 struct BasicApiDoc;
 
-pub fn router(state: BasicState) -> Router {
+pub fn router(state: AppState) -> Router {
     let mut api_doc = BasicApiDoc::openapi();
 
     api_doc.merge(sample::Api::openapi());
@@ -31,10 +29,7 @@ pub fn router(state: BasicState) -> Router {
 }
 
 async fn handle_404() -> Error {
-    Error::AppError(
-        StatusCode::NOT_FOUND, 
-        "404".to_owned(), 
-        "nothing to see here".to_owned())
+    Error::AppError(StatusCode::NOT_FOUND, "nothing to see here".to_owned())
 }
 
 async fn hello_world() -> Html<&'static str> {
