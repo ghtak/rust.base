@@ -19,10 +19,11 @@ use crate::{
 #[openapi(paths(authorize, token), components(schemas(AuthorizeReq, TokenReq)))]
 pub(super) struct Api;
 
-pub fn router() -> Router<AppState> {
+pub fn router(state: AppState) -> Router {
     Router::new()
         .route("/ouath2/authorize", get(authorize))
         .route("/ouath2/token", post(token))
+        .with_state(state)
 }
 
 #[derive(Serialize, Deserialize, Debug, ToSchema, IntoParams)]
@@ -131,7 +132,8 @@ impl OAuth2Service {
                 2
             };
             tracing::info!(req=?req);
-            let result = self.repository.find_token(&req.code, token_type).await?;
+            let result = self.repository.find_user_by_token(&req.code, token_type).await?;
+            tracing::info!("{result:?}");
             if result.is_none() {
                 return Err(Error::AppError(
                     StatusCode::BAD_REQUEST,
@@ -181,7 +183,7 @@ pub struct Credential {
     pub client_secret: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::Decode, sqlx::FromRow)]
 pub struct User {
     pub id: i64,
     pub account: String,
@@ -198,7 +200,7 @@ pub struct Token {
     pub credential_id: i64,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, sqlx::FromRow)]
 pub struct TokenWithUser {
     pub token: String,
     pub token_type: i32,
@@ -206,7 +208,8 @@ pub struct TokenWithUser {
     pub expired_at: chrono::DateTime<chrono::Utc>,
     pub user_id: i64,
     pub credential_id: i64,
-    pub user: User,
+    pub user_account: String,
+    pub user_password: String,
 }
 
 #[derive(Clone, Debug)]
@@ -291,18 +294,37 @@ impl OAuth2Repository {
         }
     }
 
-    pub async fn find_user_by_token(&self, token: &str, token_type: i32) -> Result<Option<User>> {
-        let result = sqlx::query_as::<_, User>(
+    pub async fn find_user_by_token(&self, token: &str, token_type: i32) -> Result<Option<TokenWithUser>> {
+        let result = sqlx::query_as::<_, TokenWithUser>(
             r#"
-            select u.* 
+            select 
+                t.token,
+                t.token_type,
+                t.is_active,
+                t.expired_at,
+                t.user_id,
+                t.credential_id,
+                u.account as user_account, 
+                u.password as user_password
             from user as u
             inner join token as t on u.id = t.user_id
-            where t.token = ($1) and t.token_type = {$2} "#,
-        )
+            where t.token = ($1) and t.token_type = ($2) "# )
         .bind(token)
         .bind(token_type)
         .fetch_one(&self.db.replicas_pool())
         .await;
+            
+        // let result = sqlx::query_as::<_, User>(
+        //     r#"
+        //     select u.* 
+        //     from user as u
+        //     inner join token as t on u.id = t.user_id
+        //     where t.token = ($1) and t.token_type = {$2} "#,
+        // )
+        // .bind(token)
+        // .bind(token_type)
+        // .fetch_one(&self.db.replicas_pool())
+        // .await;
         match result {
             Ok(v) => Ok(Some(v)),
             Err(e) => match e {

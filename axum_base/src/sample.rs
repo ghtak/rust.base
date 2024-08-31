@@ -15,7 +15,7 @@ use crate::{
 #[openapi(paths(sample_post, sample_path), components(schemas(Sample)))]
 pub(super) struct Api;
 
-pub fn router() -> Router<AppState> {
+pub fn router() -> Router {
     Router::new()
         .route("/sample/", post(sample_post))
         .route("/sample/:user_id/teams/:team_id", get(sample_path))

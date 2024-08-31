@@ -1,4 +1,4 @@
-run_server: 
+run: 
 	cargo run --bin server
 
 run_client:
@@ -10,3 +10,4 @@ docker_build:
 
 docker_run:
 	docker run --publish 18080:18080 axum_base
+

@@ -6,26 +6,21 @@ use crate::{app_state::AppState, basic::error::Error, oauth2sample, sample};
 use utoipa_swagger_ui::SwaggerUi;
 
 #[derive(OpenApi)]
-#[openapi(info(description = "Basic Api description"))]
-struct BasicApiDoc;
+#[openapi(info(description = "Api description"))]
+struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
-    let mut api_doc = BasicApiDoc::openapi();
-
+    let mut api_doc = ApiDoc::openapi();
     api_doc.merge(sample::Api::openapi());
     api_doc.merge(oauth2sample::Api::openapi());
-
-    let router = Router::new()
+    Router::new()
         .route("/helloworld", get(hello_world))
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", api_doc))
         .merge(sample::router())
-        .merge(oauth2sample::router())
+        .merge(oauth2sample::router(state.clone()))
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
         .fallback(handle_404)
-        .with_state(state);
-
-    router
 }
 
 async fn handle_404() -> Error {

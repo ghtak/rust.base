@@ -12,7 +12,7 @@ async fn main() {
     let env = Env::new("dev.toml");
     basic::tracing::init(&env);
     tracing::info!(val=32, env=?env);
-
+ 
     let database = Database::builder()
         .env(env.clone())
         .connect()
@@ -26,7 +26,8 @@ async fn main() {
         .await
         .expect("listen fail");
     tracing::info!("run server {}", env.server.address.as_str());
-    axum::serve(listener, router)
+    
+    axum::serve(listener, router.into_make_service())
         .with_graceful_shutdown(basic::shutdown_signal())
         .await
         .expect("serve fail");
