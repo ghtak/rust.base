@@ -16,7 +16,7 @@ pub fn router(state: AppState) -> Router {
     Router::new()
         .route("/helloworld", get(hello_world))
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", api_doc))
-        .merge(sample::router())
+        .merge(sample::router(state.clone()))
         .merge(oauth2sample::router(state.clone()))
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())

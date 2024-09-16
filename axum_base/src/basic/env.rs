@@ -8,6 +8,7 @@ pub struct Env {
     pub server: Server,
     pub tracing: Tracing,
     pub database: Database,
+    pub redis: Redis,
 }
 
 impl Env {
@@ -39,4 +40,11 @@ pub struct DatabaseConnection {
 pub struct Database {
     pub sources: Vec<DatabaseConnection>,
     pub replicas: Vec<DatabaseConnection>,
+}
+
+#[derive(Deserialize, Debug, Serialize, Default, Clone)]
+pub struct Redis {
+    pub enable: bool,
+    pub host: String,
+    pub port: u16,
 }

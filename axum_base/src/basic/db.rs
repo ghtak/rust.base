@@ -20,9 +20,9 @@ impl<DB> BasicDatabase<DB>
 where
     DB: sqlx::Database,
 {
-    pub fn builder() -> DatabaseBuilder<DB> {
+    pub fn builder(env: Env) -> DatabaseBuilder<DB> {
         DatabaseBuilder::<DB> {
-            env: Env::default(),
+            env: env,
             sources: None,
             replicas: None,
         }
@@ -73,11 +73,6 @@ impl<DB> DatabaseBuilder<DB>
 where
     DB: sqlx::Database,
 {
-    pub fn env(mut self, env: Env) -> Self {
-        self.env = env;
-        self
-    }
-
     async fn _connect_db(
         &self,
         conn_infos: &Vec<DatabaseConnection>,

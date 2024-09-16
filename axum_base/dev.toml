@@ -16,3 +16,8 @@ replicas = [
     { url = "sqlite://sqlite.db" , max_connections=5 },
     { url = "sqlite://sqlite.db" , max_connections=5 }
 ]
+
+[redis]
+enable=true
+host="0.0.0.0"
+port=6379

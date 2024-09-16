@@ -11,7 +11,7 @@ use utoipa::{IntoParams, OpenApi, ToSchema};
 use uuid::Uuid;
 
 use crate::{
-    app_state::{AppState, Database, DatabaseDriver},
+    app_state::{AppState, DBPool, DatabaseDriver},
     basic::{error::Error, extract::Json, Result},
 };
 
@@ -48,7 +48,7 @@ async fn authorize(
     State(s): State<AppState>,
     Query(req): Query<AuthorizeReq>,
 ) -> Result<Json<AuthorizeRes>> {
-    let service = OAuth2Service::new(OAuth2Repository::new(s.database.clone()));
+    let service = OAuth2Service::new(OAuth2Repository::new(s.database_pool.clone()));
     let res = service.authorize(&req).await?;
     Ok(Json(res))
 }
@@ -77,7 +77,7 @@ struct TokenRes {
                  content=TokenReq)
 )]
 async fn token(State(s): State<AppState>, Form(req): Form<TokenReq>) -> Result<Json<TokenRes>> {
-    let service = OAuth2Service::new(OAuth2Repository::new(s.database.clone()));
+    let service = OAuth2Service::new(OAuth2Repository::new(s.database_pool.clone()));
     let res = service.token(&req).await?;
     Ok(Json(res))
 }
@@ -214,11 +214,11 @@ pub struct TokenWithUser {
 
 #[derive(Clone, Debug)]
 pub struct OAuth2Repository {
-    db: Database,
+    db: DBPool,
 }
 
 impl OAuth2Repository {
-    pub fn new(db: Database) -> Self {
+    pub fn new(db: DBPool) -> Self {
         OAuth2Repository { db }
     }
 

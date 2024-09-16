@@ -4,6 +4,7 @@ use axum::{
     http::StatusCode,
     response::IntoResponse,
 };
+use redis::RedisError;
 use serde_json::json;
 use thiserror::Error;
 
@@ -35,6 +36,9 @@ pub enum Error {
 
     #[error("app error status: {0} message: {1}")]
     AppError(StatusCode, String),
+
+    #[error(transparent)]
+    RedisError(#[from] RedisError),
 }
 
 impl IntoResponse for Error {

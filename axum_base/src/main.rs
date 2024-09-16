@@ -1,4 +1,4 @@
-use app_state::{AppState, Database};
+use app_state::{AppState, DBPool};
 use basic::env::Env;
 
 mod app_state;
@@ -13,14 +13,15 @@ async fn main() {
     basic::tracing::init(&env);
     tracing::info!(val=32, env=?env);
  
-    let database = Database::builder()
-        .env(env.clone())
+    let database = DBPool::builder(env.clone())
         .connect()
         .await
         .expect("database build fail")
         .build();
 
-    let state = AppState::new(database);
+    let redis_pool = basic::redis::init(&env).await.expect("msg");
+
+    let state = AppState::new(database, redis_pool);
     let router = route::router(state);
     let listener = tokio::net::TcpListener::bind(env.server.address.as_str())
         .await

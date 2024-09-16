@@ -4,6 +4,7 @@ pub mod error;
 pub mod extract;
 pub mod roundrobin;
 pub mod tracing;
+pub mod redis;
 
 #[allow(dead_code)]
 pub type Result<T> = core::result::Result<T, error::Error>;
