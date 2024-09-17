@@ -1,10 +1,12 @@
 use axum::{
     extract::State,
+    http::StatusCode,
     response::IntoResponse,
     routing::{get, post},
     Router,
 };
 use axum_extra::extract::{cookie::Cookie, CookieJar};
+use error_stack::Report;
 use redis::cmd;
 use serde::{Deserialize, Serialize};
 use utoipa::{OpenApi, ToSchema};
@@ -30,7 +32,8 @@ use crate::{
         set_redis,
         get_redis1,
         set_redis_repo,
-        get_redis_repo
+        get_redis_repo,
+        error_stack_result,
     ),
     components(schemas(Sample))
 )]
@@ -47,6 +50,7 @@ pub fn router() -> Router<AppState> {
         .route("/sample/get_redis1", get(get_redis1))
         .route("/sample/set_redis_repo", get(set_redis_repo))
         .route("/sample/get_redis_repo", get(get_redis_repo))
+        .route("/sample/error_stack_result", get(error_stack_result))
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -159,4 +163,23 @@ async fn set_redis_repo(
 ) -> Result<impl IntoResponse, Error> {
     repo.set_string("test_key", "test_value").await?;
     Ok(())
+}
+
+fn return_error() -> error_stack::Result<(), Error> {
+    Err(Report::from(Error::Message("test".to_owned()))
+        .attach(StatusCode::BAD_REQUEST)
+        .attach_printable("StatusCode::BAD_REQUEST"))
+}
+
+#[utoipa::path(get, path = "/sample/error_stack_result")]
+async fn error_stack_result() -> Result<impl IntoResponse, axum::response::Response> {
+    Ok(return_error().map_err(to_response)?)
+}
+
+pub fn to_response(report: Report<Error>) -> axum::response::Response {
+    #[cfg(nightly)]
+    for code in report.request_ref::<StatusCode>() {
+        return (code, format!("{:?}", report)).into_response();
+    }
+    (StatusCode::INTERNAL_SERVER_ERROR, format!("{:?}", report)).into_response()
 }
