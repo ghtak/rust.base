@@ -1,0 +1,1 @@
+pub struct Depends<T>(pub T);

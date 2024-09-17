@@ -9,7 +9,7 @@ use crate::basic::env::Env;
 pub fn init(env: &Env) {
     let max_level = tracing::Level::from_str(&env.tracing.max_level).unwrap_or(Level::TRACE);
     let subscriber = tracing_subscriber::fmt()
-        .json()
+        //.json()
         .with_ansi(false)
         .with_max_level(max_level);
 

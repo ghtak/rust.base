@@ -10,16 +10,28 @@ use serde::{Deserialize, Serialize};
 use utoipa::{OpenApi, ToSchema};
 
 use crate::{
-    app_state::AppState,
+    app_state::{AppState, RedisConnection},
     basic::{
+        depends::Depends,
         error::Error,
         extract::{Json, Path},
+        redis::RedisRepository,
     },
 };
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(sample_post, sample_path, get_cookie, set_cookie, get_redis, set_redis),
+    paths(
+        sample_post,
+        sample_path,
+        get_cookie,
+        set_cookie,
+        get_redis,
+        set_redis,
+        get_redis1,
+        set_redis_repo,
+        get_redis_repo
+    ),
     components(schemas(Sample))
 )]
 pub(super) struct Api;
@@ -32,6 +44,9 @@ pub fn router(state: AppState) -> Router {
         .route("/sample/get_cookie", get(get_cookie))
         .route("/sample/set_redis", get(set_redis))
         .route("/sample/get_redis", get(get_redis))
+        .route("/sample/get_redis1", get(get_redis1))
+        .route("/sample/set_redis_repo", get(set_redis_repo))
+        .route("/sample/get_redis_repo", get(get_redis_repo))
         .with_state(state)
 }
 
@@ -110,8 +125,41 @@ async fn get_redis(State(s): State<AppState>) -> Result<impl IntoResponse, Error
             .await
             .map_err(|e| Error::Message(e.to_string()))?;
         if let Some(v) = value {
-            return Ok(v)
+            return Ok(v);
         }
     }
     Ok("None".to_owned())
+}
+
+#[utoipa::path(get, path = "/sample/get_redis1")]
+async fn get_redis1(Depends(mut c): Depends<RedisConnection>) -> Result<impl IntoResponse, Error> {
+    let value: Option<String> = cmd("GET")
+        .arg("test_key")
+        .query_async(&mut *c)
+        .await
+        .map_err(|e| Error::Message(e.to_string()))?;
+    if let Some(v) = value {
+        return Ok(v);
+    }
+    Ok("None".to_owned())
+}
+
+#[utoipa::path(get, path = "/sample/get_redis_repo")]
+async fn get_redis_repo(
+    Depends(repo): Depends<RedisRepository>,
+) -> Result<impl IntoResponse, Error> {
+    let resp = if let Some(value) = repo.get_string("test_key").await? {
+        value
+    } else {
+        "None".to_owned()
+    };
+    Ok(resp)
+}
+
+#[utoipa::path(get, path = "/sample/set_redis_repo")]
+async fn set_redis_repo(
+    Depends(repo): Depends<RedisRepository>,
+) -> Result<impl IntoResponse, Error> {
+    repo.set_string("test_key",  "test_value").await?;
+    Ok(())
 }
