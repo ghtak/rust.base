@@ -12,11 +12,11 @@ pub type RedisConnection = PooledConnection<'static, RedisConnectionManager>;
 #[derive(Clone, Debug)]
 pub struct AppState {
     pub database_pool: DBPool,
-    pub redis_pool: Option<RedisPool>,
+    pub redis_pool: RedisPool,
 }
 
 impl AppState {
-    pub fn new(database_pool: DBPool, redis_pool: Option<RedisPool>) -> Self {
+    pub fn new(database_pool: DBPool, redis_pool: RedisPool) -> Self {
         AppState {
             database_pool,
             redis_pool,
@@ -38,8 +38,9 @@ impl FromRef<AppState> for DBPool {
 
 impl FromRef<AppState> for RedisPool {
     fn from_ref(input: &AppState) -> Self {
-        let p = input.redis_pool.as_ref().map(|x| x.clone());
-        p.unwrap()
+        // let p = input.redis_pool.as_ref().map(|x| x.clone());
+        // p.unwrap()
+        input.redis_pool.clone()
     }
 }
 

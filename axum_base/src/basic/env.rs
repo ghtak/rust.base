@@ -44,7 +44,6 @@ pub struct Database {
 
 #[derive(Deserialize, Debug, Serialize, Default, Clone)]
 pub struct Redis {
-    pub enable: bool,
     pub host: String,
     pub port: u16,
 }

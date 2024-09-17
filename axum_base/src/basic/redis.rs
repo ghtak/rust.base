@@ -6,15 +6,10 @@ use crate::basic::Result;
 use super::env::Env;
 use super::error::Error;
 
-pub async fn init(env: &Env) -> Result<Option<RedisPool>> {
-    if env.redis.enable == false {
-        Ok(None)
-    } else {
-        let manager =
-            RedisConnectionManager::new(format!("redis://{}:{}", env.redis.host, env.redis.port))?;
-        let res = bb8::Pool::builder().build(manager).await?;
-        Ok(Some(res))
-    }
+pub async fn create_pool(env: &Env) -> Result<RedisPool> {
+    let manager =
+        RedisConnectionManager::new(format!("redis://{}:{}", env.redis.host, env.redis.port))?;
+    Ok(bb8::Pool::builder().build(manager).await?)
 }
 
 pub struct RedisRepository {

@@ -19,11 +19,10 @@ use crate::{
 #[openapi(paths(authorize, token), components(schemas(AuthorizeReq, TokenReq)))]
 pub(super) struct Api;
 
-pub fn router(state: AppState) -> Router {
+pub fn router() -> Router<AppState> {
     Router::new()
         .route("/ouath2/authorize", get(authorize))
         .route("/ouath2/token", post(token))
-        .with_state(state)
 }
 
 #[derive(Serialize, Deserialize, Debug, ToSchema, IntoParams)]

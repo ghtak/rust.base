@@ -10,6 +10,7 @@ axum-extra = { version = "0.9.3", features = ["cookie"] }
 bb8 = "0.8.5"
 bb8-redis = "0.17.0"
 chrono = "0.4.38"
+error-stack = "0.5.0"
 httpc-test = "0.1.10"
 redis = "0.27.2"
 serde = { version = "1.0.209", features = ["serde_derive"] }

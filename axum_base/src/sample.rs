@@ -36,7 +36,7 @@ use crate::{
 )]
 pub(super) struct Api;
 
-pub fn router(state: AppState) -> Router {
+pub fn router() -> Router<AppState> {
     Router::new()
         .route("/sample/", post(sample_post))
         .route("/sample/:user_id/teams/:team_id", get(sample_path))
@@ -47,7 +47,6 @@ pub fn router(state: AppState) -> Router {
         .route("/sample/get_redis1", get(get_redis1))
         .route("/sample/set_redis_repo", get(set_redis_repo))
         .route("/sample/get_redis_repo", get(get_redis_repo))
-        .with_state(state)
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -97,36 +96,34 @@ async fn get_cookie(jar: CookieJar) -> Result<impl IntoResponse, Error> {
 
 #[utoipa::path(get, path = "/sample/set_redis")]
 async fn set_redis(State(s): State<AppState>) -> Result<impl IntoResponse, Error> {
-    if let Some(redis_p) = s.redis_pool {
-        let mut conn = redis_p
-            .get()
-            .await
-            .map_err(|e| Error::Message(e.to_string()))?;
-        cmd("SET")
-            .arg("test_key")
-            .arg("test_value")
-            .query_async(&mut *conn)
-            .await
-            .map_err(|e| Error::Message(e.to_string()))?;
-    }
+    let mut conn = s
+        .redis_pool
+        .get()
+        .await
+        .map_err(|e| Error::Message(e.to_string()))?;
+    cmd("SET")
+        .arg("test_key")
+        .arg("test_value")
+        .query_async(&mut *conn)
+        .await
+        .map_err(|e| Error::Message(e.to_string()))?;
     Ok("".to_owned())
 }
 
 #[utoipa::path(get, path = "/sample/get_redis")]
 async fn get_redis(State(s): State<AppState>) -> Result<impl IntoResponse, Error> {
-    if let Some(redis_p) = s.redis_pool {
-        let mut conn = redis_p
-            .get()
-            .await
-            .map_err(|e| Error::Message(e.to_string()))?;
-        let value: Option<String> = cmd("GET")
-            .arg("test_key")
-            .query_async(&mut *conn)
-            .await
-            .map_err(|e| Error::Message(e.to_string()))?;
-        if let Some(v) = value {
-            return Ok(v);
-        }
+    let mut conn = s
+        .redis_pool
+        .get()
+        .await
+        .map_err(|e| Error::Message(e.to_string()))?;
+    let value: Option<String> = cmd("GET")
+        .arg("test_key")
+        .query_async(&mut *conn)
+        .await
+        .map_err(|e| Error::Message(e.to_string()))?;
+    if let Some(v) = value {
+        return Ok(v);
     }
     Ok("None".to_owned())
 }
@@ -160,6 +157,6 @@ async fn get_redis_repo(
 async fn set_redis_repo(
     Depends(repo): Depends<RedisRepository>,
 ) -> Result<impl IntoResponse, Error> {
-    repo.set_string("test_key",  "test_value").await?;
+    repo.set_string("test_key", "test_value").await?;
     Ok(())
 }

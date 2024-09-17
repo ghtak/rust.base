@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+
 use super::env::{DatabaseConnection, Env};
 use super::roundrobin::RoundRobin;
 use super::Result;
@@ -20,13 +21,13 @@ impl<DB> BasicDatabase<DB>
 where
     DB: sqlx::Database,
 {
-    pub fn builder(env: Env) -> DatabaseBuilder<DB> {
-        DatabaseBuilder::<DB> {
-            env: env,
-            sources: None,
-            replicas: None,
-        }
-    }
+    // pub fn builder(env: Env) -> DatabaseBuilder<DB> {
+    //     DatabaseBuilder::<DB> {
+    //         env: env,
+    //         sources: None,
+    //         replicas: None,
+    //     }
+    // }
 
     pub fn sources_pool(&self) -> sqlx::Pool<DB> {
         self.inner.sources.next().clone()
@@ -41,6 +42,34 @@ where
             inner: self.inner.clone(),
         }
     }
+}
+
+async fn _connect_db<DB>(conn_infos: &Vec<DatabaseConnection>) -> Result<Vec<sqlx::Pool<DB>>>
+where
+    DB: sqlx::Database,
+{
+    let mut pools: Vec<sqlx::Pool<DB>> = Vec::new();
+    for conn_info in conn_infos.iter() {
+        pools.push(
+            sqlx::pool::PoolOptions::<DB>::new()
+                .max_connections(conn_info.max_connections)
+                .connect(&conn_info.url)
+                .await?,
+        )
+    }
+    Ok(pools)
+}
+
+pub async fn create_pool<DB>(env: &Env) -> Result<BasicDatabase<DB>>
+where
+    DB: sqlx::Database,
+{
+    Ok(BasicDatabase {
+        inner: Arc::new(BasicDatabaseInner {
+            sources: RoundRobin::new(_connect_db(&env.database.sources).await?),
+            replicas: RoundRobin::new(_connect_db(&env.database.replicas).await?),
+        }),
+    })
 }
 
 // pub trait Database {
@@ -63,44 +92,44 @@ where
 //     }
 // }
 
-pub struct DatabaseBuilder<DB: sqlx::Database> {
-    env: Env,
-    sources: Option<Vec<sqlx::Pool<DB>>>,
-    replicas: Option<Vec<sqlx::Pool<DB>>>,
-}
+// pub struct DatabaseBuilder<DB: sqlx::Database> {
+//     env: Env,
+//     sources: Option<Vec<sqlx::Pool<DB>>>,
+//     replicas: Option<Vec<sqlx::Pool<DB>>>,
+// }
 
-impl<DB> DatabaseBuilder<DB>
-where
-    DB: sqlx::Database,
-{
-    async fn _connect_db(
-        &self,
-        conn_infos: &Vec<DatabaseConnection>,
-    ) -> Result<Vec<sqlx::Pool<DB>>> {
-        let mut pools: Vec<sqlx::Pool<DB>> = Vec::new();
-        for conn_info in conn_infos.iter() {
-            pools.push(
-                sqlx::pool::PoolOptions::<DB>::new()
-                    .max_connections(conn_info.max_connections)
-                    .connect(&conn_info.url)
-                    .await?,
-            )
-        }
-        Ok(pools)
-    }
+// impl<DB> DatabaseBuilder<DB>
+// where
+//     DB: sqlx::Database,
+// {
+//     async fn _connect_db(
+//         &self,
+//         conn_infos: &Vec<DatabaseConnection>,
+//     ) -> Result<Vec<sqlx::Pool<DB>>> {
+//         let mut pools: Vec<sqlx::Pool<DB>> = Vec::new();
+//         for conn_info in conn_infos.iter() {
+//             pools.push(
+//                 sqlx::pool::PoolOptions::<DB>::new()
+//                     .max_connections(conn_info.max_connections)
+//                     .connect(&conn_info.url)
+//                     .await?,
+//             )
+//         }
+//         Ok(pools)
+//     }
 
-    pub async fn connect(mut self) -> Result<Self> {
-        self.sources = Some(self._connect_db(&self.env.database.sources).await?);
-        self.replicas = Some(self._connect_db(&self.env.database.replicas).await?);
-        Ok(self)
-    }
+//     pub async fn connect(mut self) -> Result<Self> {
+//         self.sources = Some(self._connect_db(&self.env.database.sources).await?);
+//         self.replicas = Some(self._connect_db(&self.env.database.replicas).await?);
+//         Ok(self)
+//     }
 
-    pub fn build(self) -> BasicDatabase<DB> {
-        BasicDatabase {
-            inner: Arc::new(BasicDatabaseInner {
-                sources: RoundRobin::new(self.sources.unwrap()),
-                replicas: RoundRobin::new(self.replicas.unwrap()),
-            }),
-        }
-    }
-}
+//     pub fn build(self) -> BasicDatabase<DB> {
+//         BasicDatabase {
+//             inner: Arc::new(BasicDatabaseInner {
+//                 sources: RoundRobin::new(self.sources.unwrap()),
+//                 replicas: RoundRobin::new(self.replicas.unwrap()),
+//             }),
+//         }
+//     }
+// }

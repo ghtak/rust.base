@@ -6,7 +6,7 @@ use tracing_subscriber::fmt::writer::MakeWriterExt;
 
 use crate::basic::env::Env;
 
-pub fn init(env: &Env) {
+pub fn init_tracing(env: &Env) {
     let max_level = tracing::Level::from_str(&env.tracing.max_level).unwrap_or(Level::TRACE);
     let subscriber = tracing_subscriber::fmt()
         //.json()

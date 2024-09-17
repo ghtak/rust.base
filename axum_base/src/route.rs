@@ -15,12 +15,13 @@ pub fn router(state: AppState) -> Router {
     api_doc.merge(oauth2sample::Api::openapi());
     Router::new()
         .route("/helloworld", get(hello_world))
-        .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", api_doc))
-        .merge(sample::router(state.clone()))
-        .merge(oauth2sample::router(state.clone()))
+        .merge(SwaggerUi::new("/docs").url("/api-docs/openapi.json", api_doc))
+        .merge(sample::router())
+        .merge(oauth2sample::router())
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
         .fallback(handle_404)
+        .with_state(state)
 }
 
 async fn handle_404() -> Error {
