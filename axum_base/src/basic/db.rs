@@ -1,9 +1,10 @@
 use std::sync::Arc;
 
+use error_stack::ResultExt;
 
 use super::env::{DatabaseConnection, Env};
+use super::error::{AppError, AppResult};
 use super::roundrobin::RoundRobin;
-use super::Result;
 
 #[derive(Debug)]
 struct BasicDatabaseInner<DB: sqlx::Database> {
@@ -44,7 +45,7 @@ where
     }
 }
 
-async fn _connect_db<DB>(conn_infos: &Vec<DatabaseConnection>) -> Result<Vec<sqlx::Pool<DB>>>
+async fn _connect_db<DB>(conn_infos: &Vec<DatabaseConnection>) -> AppResult<Vec<sqlx::Pool<DB>>>
 where
     DB: sqlx::Database,
 {
@@ -54,13 +55,14 @@ where
             sqlx::pool::PoolOptions::<DB>::new()
                 .max_connections(conn_info.max_connections)
                 .connect(&conn_info.url)
-                .await?,
+                .await
+                .change_context(AppError::InitError("database".to_string()))?,
         )
     }
     Ok(pools)
 }
 
-pub async fn create_pool<DB>(env: &Env) -> Result<BasicDatabase<DB>>
+pub async fn create_pool<DB>(env: &Env) -> AppResult<BasicDatabase<DB>>
 where
     DB: sqlx::Database,
 {

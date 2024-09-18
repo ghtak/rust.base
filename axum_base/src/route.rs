@@ -25,7 +25,7 @@ pub fn router(state: AppState) -> Router {
 }
 
 async fn handle_404() -> Error {
-    Error::AppError(StatusCode::NOT_FOUND, "nothing to see here".to_owned())
+    Error::AppError(StatusCode::NOT_FOUND, "nothing to see here".to_string())
 }
 
 async fn hello_world() -> Html<&'static str> {

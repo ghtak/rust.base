@@ -1,15 +1,15 @@
-use crate::basic::error::Error;
+use crate::basic::error::AppReport;
 use axum::{
     extract::{FromRequest, FromRequestParts},
     response::IntoResponse,
 };
 
 #[derive(Debug, FromRequest)]
-#[from_request(via(axum::Json), rejection(Error))]
+#[from_request(via(axum::Json), rejection(AppReport))]
 pub struct Json<T>(pub T);
 
 #[derive(Debug, FromRequestParts)]
-#[from_request(via(axum::extract::Path), rejection(Error))]
+#[from_request(via(axum::extract::Path), rejection(AppReport))]
 pub struct Path<T>(pub T);
 
 impl<T> IntoResponse for Json<T>
@@ -34,7 +34,7 @@ where
 //         let path = parts
 //             .extract::<MatchedPath>()
 //             .await
-//             .map(|path| path.as_str().to_owned())
+//             .map(|path| path.as_str().to_string())
 //             .ok();
 //         let req = Request::from_parts(parts, body);
 //         match axum::Json::<T>::from_request(req, state).await {

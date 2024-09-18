@@ -1,6 +1,5 @@
 use axum::{
     extract::State,
-    http::StatusCode,
     response::IntoResponse,
     routing::{get, post},
     Router,
@@ -15,7 +14,7 @@ use crate::{
     app_state::{AppState, RedisConnection},
     basic::{
         depends::Depends,
-        error::Error,
+        error::{AppError, AppReport, AppResult, Error, JsonResult},
         extract::{Json, Path},
         redis::RedisRepository,
     },
@@ -95,7 +94,7 @@ async fn set_cookie(jar: CookieJar) -> impl IntoResponse {
 #[utoipa::path(get, path = "/sample/get_cookie")]
 async fn get_cookie(jar: CookieJar) -> Result<impl IntoResponse, Error> {
     let c = jar.get("foo").ok_or(Error::Message("xx".into()))?;
-    Ok(c.value().to_owned())
+    Ok(c.value().to_string())
 }
 
 #[utoipa::path(get, path = "/sample/set_redis")]
@@ -111,7 +110,7 @@ async fn set_redis(State(s): State<AppState>) -> Result<impl IntoResponse, Error
         .query_async(&mut *conn)
         .await
         .map_err(|e| Error::Message(e.to_string()))?;
-    Ok("".to_owned())
+    Ok("".to_string())
 }
 
 #[utoipa::path(get, path = "/sample/get_redis")]
@@ -129,7 +128,7 @@ async fn get_redis(State(s): State<AppState>) -> Result<impl IntoResponse, Error
     if let Some(v) = value {
         return Ok(v);
     }
-    Ok("None".to_owned())
+    Ok("None".to_string())
 }
 
 #[utoipa::path(get, path = "/sample/get_redis1")]
@@ -142,17 +141,17 @@ async fn get_redis1(Depends(mut c): Depends<RedisConnection>) -> Result<impl Int
     if let Some(v) = value {
         return Ok(v);
     }
-    Ok("None".to_owned())
+    Ok("None".to_string())
 }
 
 #[utoipa::path(get, path = "/sample/get_redis_repo")]
 async fn get_redis_repo(
     Depends(repo): Depends<RedisRepository>,
-) -> Result<impl IntoResponse, Error> {
+) -> Result<impl IntoResponse, AppReport> {
     let resp = if let Some(value) = repo.get_string("test_key").await? {
         value
     } else {
-        "None".to_owned()
+        "None".to_string()
     };
     Ok(resp)
 }
@@ -160,26 +159,26 @@ async fn get_redis_repo(
 #[utoipa::path(get, path = "/sample/set_redis_repo")]
 async fn set_redis_repo(
     Depends(repo): Depends<RedisRepository>,
-) -> Result<impl IntoResponse, Error> {
+) -> Result<impl IntoResponse, AppReport> {
     repo.set_string("test_key", "test_value").await?;
     Ok(())
 }
 
-fn return_error() -> error_stack::Result<(), Error> {
-    Err(Report::from(Error::Message("test".to_owned()))
-        .attach(StatusCode::BAD_REQUEST)
-        .attach_printable("StatusCode::BAD_REQUEST"))
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Resp {
+    code: u32,
+    message: String,
+}
+
+fn return_error() -> AppResult<Resp> {
+    // Ok(Resp {
+    //     code: 16,
+    //     message: "OkMessage".to_string(),
+    // })
+    Err(Report::from(AppError::BadRequest("test".to_string())))
 }
 
 #[utoipa::path(get, path = "/sample/error_stack_result")]
-async fn error_stack_result() -> Result<impl IntoResponse, axum::response::Response> {
-    Ok(return_error().map_err(to_response)?)
-}
-
-pub fn to_response(report: Report<Error>) -> axum::response::Response {
-    #[cfg(nightly)]
-    for code in report.request_ref::<StatusCode>() {
-        return (code, format!("{:?}", report)).into_response();
-    }
-    (StatusCode::INTERNAL_SERVER_ERROR, format!("{:?}", report)).into_response()
+async fn error_stack_result() -> JsonResult<Resp> {
+    Ok(axum::Json(return_error()?))
 }
