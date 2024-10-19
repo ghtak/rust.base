@@ -6,7 +6,7 @@ address="0.0.0.0:18080"
 [tracing]
 max_level="TRACE"
 directory="./logs"
-with_file=false
+with_file=true
 
 [database]
 sources = [
@@ -19,4 +19,4 @@ replicas = [
 
 [redis]
 host="0.0.0.0"
-port=6379
+port=63791

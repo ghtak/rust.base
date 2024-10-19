@@ -1,7 +1,9 @@
+use bb8::PooledConnection;
 use bb8_redis::RedisConnectionManager;
 use error_stack::ResultExt;
+use redis::AsyncCommands;
 
-use crate::app_state::RedisPool;
+use crate::app_state::{RedisConnection, RedisPool};
 
 use super::env::Env;
 use super::error::{AppError, AppResult};
@@ -25,32 +27,39 @@ impl RedisRepository {
         RedisRepository { redis_pool }
     }
 
-    pub async fn set_string<'a>(&self, key: &'a str, value: &'a str) -> AppResult<()> {
-        let mut conn = self
+    async fn get_connection(&self) -> AppResult<PooledConnection<'_, RedisConnectionManager>> {
+        Ok(self
             .redis_pool
             .get()
             .await
-            .change_context(AppError::PortError("redis connection".to_string()))?;
-        redis::cmd("SET")
-            .arg(key)
-            .arg(value)
-            .query_async(&mut *conn)
+            .change_context(AppError::PortError("redis connection".to_string()))?)
+    }
+
+    pub async fn set_string<'a>(&self, key: &'a str, value: &'a str) -> AppResult<()> {
+        let mut conn = self.get_connection().await?;
+        conn.set(key, value)
             .await
             .change_context(AppError::PortError("redis set".to_string()))?;
+        // redis::cmd("SET")
+        //     .arg(key)
+        //     .arg(value)
+        //     .query_async(&mut *conn)
+        //     .await
+        //     .change_context(AppError::PortError("redis set".to_string()))?;
         Ok(())
     }
 
     pub async fn get_string<'a>(&self, key: &'a str) -> AppResult<Option<String>> {
-        let mut conn = self
-            .redis_pool
-            .get()
-            .await
-            .change_context(AppError::PortError("redis connection".to_string()))?;
-        let value: Option<String> = redis::cmd("GET")
-            .arg(key)
-            .query_async(&mut *conn)
+        let mut conn = self.get_connection().await?;
+        let value: Option<String> = conn
+            .get(key)
             .await
             .change_context(AppError::PortError("redis get".to_string()))?;
+        // let value: Option<String> = redis::cmd("GET")
+        //     .arg(key)
+        //     .query_async(&mut *conn)
+        //     .await
+        //     .change_context(AppError::PortError("redis get".to_string()))?;
         Ok(value)
     }
 }

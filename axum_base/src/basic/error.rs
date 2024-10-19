@@ -26,7 +26,6 @@ pub enum AppError {
 
     #[error("init error {0}")]
     InitError(String),
-    
     // #[error(transparent)]
     // SqlxError(#[from] sqlx::Error),
 }
@@ -46,6 +45,7 @@ impl IntoResponse for AppReport {
             AppError::IllegalState(message) => (StatusCode::BAD_REQUEST, message.to_string()),
             other => (StatusCode::INTERNAL_SERVER_ERROR, format!("{}", other)),
         };
+        tracing::error!(status_code=?status_code, message=message, report=?report);
         (
             status_code,
             axum::Json(json!({
