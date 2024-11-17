@@ -38,7 +38,7 @@ async fn echo() {
             _ = rx.recv() => {
                 return;
             }
-        };
+        }
     }
 }
 
