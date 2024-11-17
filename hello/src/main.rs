@@ -1,3 +1,5 @@
+mod hi_thiserror;
+
 fn main() {
     println!("Hello, world!");
 }
