@@ -2,6 +2,7 @@ mod hi_thiserror;
 mod hi_anyhow;
 mod blanket_implementation;
 mod async_runtime;
+mod hi_tokio_echo;
 
 fn main() {
     println!("Hello, world!");
