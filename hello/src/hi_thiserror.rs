@@ -18,11 +18,9 @@ pub fn work_with_io() -> Result<(), HiError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-
-
+    
     #[test]
-    fn hi_error_from_std_io_error() {
+    fn test_hi_error_from_std_io_error() {
         match work_with_io() {
             Err(e) => println!("{}", e),
             _ => return

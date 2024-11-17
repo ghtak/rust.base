@@ -1,6 +1,7 @@
 mod hi_thiserror;
 mod hi_anyhow;
 mod blanket_implementation;
+mod async_runtime;
 
 fn main() {
     println!("Hello, world!");
