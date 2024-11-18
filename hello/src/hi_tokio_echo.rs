@@ -1,3 +1,4 @@
+use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpSocket, TcpStream};
 use tokio::select;
@@ -24,14 +25,17 @@ async fn echo() {
                     let mut buf = vec![0; 1024];
                     loop {
                         let n = handle.stream.read(&mut buf).await.unwrap();
-                        if n == 0 {
+                        println!("read {}", std::str::from_utf8(&buf[..n]).unwrap());
+                        if n > 0 {
+                            handle.stream.write_all(&buf[0..n]).await.unwrap();
+                            if buf[0] == 'q' as u8 {
+                                handle.tx.send('q' as u8).unwrap();
+                                return
+                            }
+                        } else {
                             return;
                         }
-                        if buf[0] == 'q' as u8 {
-                            handle.tx.send('q' as u8).unwrap();
-                            return;
-                        }
-                        handle.stream.write_all(&buf[0..n]).await.unwrap();
+
                     }
                 });
             },
@@ -43,14 +47,14 @@ async fn echo() {
 }
 
 async fn client(){
+    tokio::time::sleep(Duration::from_secs(1)).await;
     let addr = "127.0.0.1:8089".parse().unwrap();
     let socket = TcpSocket::new_v4().unwrap();
     let mut stream = socket.connect(addr).await.unwrap();
-    stream.write_u8('a' as u8).await.unwrap();
-    let mut buf = vec![0; 128];
-    let n = stream.read(&mut buf).await.unwrap();
-    assert_eq!(&buf[..n], b"a");
-    stream.write_u8('q' as u8).await.unwrap();
+    for c in "abcdq".chars() {
+        stream.write_u8(c as u8).await.unwrap();
+        assert_eq!(stream.read_u8().await.unwrap(), c as u8);
+    }
     return;
 }
 
@@ -58,7 +62,6 @@ async fn client(){
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::time::Duration;
 
     #[test]
     fn test_run_echo(){
@@ -67,9 +70,7 @@ mod tests {
             .build()
             .unwrap()
             .block_on(async {
-                tokio::spawn(echo());
-                tokio::time::sleep(Duration::from_secs(3)).await;
-                tokio::spawn(client());
+                tokio::join!(echo(), client());
             });
     }
 }
