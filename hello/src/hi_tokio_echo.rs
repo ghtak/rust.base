@@ -51,7 +51,7 @@ async fn client(){
     let addr = "127.0.0.1:8089".parse().unwrap();
     let socket = TcpSocket::new_v4().unwrap();
     let mut stream = socket.connect(addr).await.unwrap();
-    for c in "abcdq".chars() {
+    for c in "hello tokio q".chars() {
         stream.write_u8(c as u8).await.unwrap();
         assert_eq!(stream.read_u8().await.unwrap(), c as u8);
     }

@@ -30,10 +30,6 @@ mod tests {
         match foo() {
             Err(e) => println!("{e:?}"),
             _ => assert!(true),
-        };
-        match bar() {
-            Err(e) => println!("{e:?}"),
-            _ => assert!(true),
         }
     }
 
