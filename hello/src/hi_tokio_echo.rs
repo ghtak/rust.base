@@ -9,6 +9,25 @@ pub struct Handle {
     tx: broadcast::Sender<u8>,
 }
 
+async fn echo_handler(mut handle: Handle) {
+    tokio::spawn(async move {
+        let mut buf = vec![0; 1024];
+        loop {
+            let n = handle.stream.read(&mut buf).await.unwrap();
+            println!("read {}", std::str::from_utf8(&buf[..n]).unwrap());
+            if n > 0 {
+                handle.stream.write_all(&buf[0..n]).await.unwrap();
+                if buf[0] == 'q' as u8 {
+                    handle.tx.send('q' as u8).unwrap();
+                    return;
+                }
+            } else {
+                return;
+            }
+        }
+    });
+}
+
 async fn echo() {
     let addr = "127.0.0.1:8089".to_string();
     let listener = TcpListener::bind(&addr).await.unwrap();
@@ -17,27 +36,7 @@ async fn echo() {
         select! {
             r = listener.accept() => {
                 let (stream, _) = r.unwrap();
-                let mut handle = Handle{
-                    stream,
-                    tx: tx.clone()
-                };
-                tokio::spawn(async move {
-                    let mut buf = vec![0; 1024];
-                    loop {
-                        let n = handle.stream.read(&mut buf).await.unwrap();
-                        println!("read {}", std::str::from_utf8(&buf[..n]).unwrap());
-                        if n > 0 {
-                            handle.stream.write_all(&buf[0..n]).await.unwrap();
-                            if buf[0] == 'q' as u8 {
-                                handle.tx.send('q' as u8).unwrap();
-                                return
-                            }
-                        } else {
-                            return;
-                        }
-
-                    }
-                });
+                echo_handler(Handle{ stream, tx: tx.clone()}).await;
             },
             _ = rx.recv() => {
                 return;
@@ -46,7 +45,7 @@ async fn echo() {
     }
 }
 
-async fn client(){
+async fn client() {
     tokio::time::sleep(Duration::from_secs(1)).await;
     let addr = "127.0.0.1:8089".parse().unwrap();
     let socket = TcpSocket::new_v4().unwrap();
@@ -58,13 +57,12 @@ async fn client(){
     return;
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_run_echo(){
+    fn test_run_echo() {
         tokio::runtime::Builder::new_multi_thread()
             .enable_all()
             .build()
