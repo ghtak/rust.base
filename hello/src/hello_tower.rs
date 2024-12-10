@@ -1,39 +1,57 @@
-use anyhow::Error;
 use std::future::Future;
 
 struct Server {}
 
 struct Request {}
 
-struct Response {}
+#[derive(Debug)]
+struct Response {
+    code: usize
+}
 
-async fn read_request() -> Result<Request, Error> {
+impl Response{
+    fn ok() -> Self{
+        Response{code:200}
+    }
+    fn not_found() -> Self {
+        Response{code:404}
+    }
+}
+
+
+type Result<T> = core::result::Result<T, anyhow::Error>;
+
+async fn read_request() -> Result<Request> {
     Ok(Request {})
 }
 
-async fn write_response(response: Response) {}
+async fn write_response(response: Response) {
+    println!("{:?}", response);
+}
 
 impl Server {
     fn new() -> Self {
         Server {}
     }
 
-    async fn run<F, Fut>(self, handler: F) -> Result<(), Error>
+    async fn run<F, Fut>(self, handler: F) -> Result<()>
     where
         F: Fn(Request) -> Fut + Send + Copy + 'static,
-        Fut: Future<Output = Response> + Send,
-    {   
+        Fut: Future<Output = Result<Response>> + Send,
+    {
         let request = read_request().await?;
         tokio::spawn(async move {
-            let response = handler(request).await;
-            write_response(response).await;
+            match handler(request).await {
+                Ok(response) => write_response(response).await,
+                Err(e) => println!("error {:?}", e),
+            }
         });
         Ok(())
     }
 }
 
-async fn handle_request(request: Request) -> Response {
-    Response {}
+async fn handle_request(request: Request) -> Result<Response> {
+    Ok(Response::ok())
 }
 
 #[cfg(test)]
