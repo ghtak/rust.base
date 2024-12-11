@@ -9,6 +9,10 @@ struct Response {
     code: usize,
 }
 
+trait SetHeader {
+    fn set_header(&self, header_key: &str, header_value: &str);
+}
+
 impl Response {
     fn ok() -> Self {
         Response { code: 200 }
@@ -16,6 +20,9 @@ impl Response {
     fn not_found() -> Self {
         Response { code: 404 }
     }
+}
+
+impl SetHeader for Response {
     fn set_header(&self, header_key: &str, header_value: &str) {}
 }
 
@@ -27,27 +34,6 @@ async fn read_request() -> Result<Request> {
 
 async fn write_response(response: Response) {
     println!("{:?}", response);
-}
-
-impl Server {
-    fn new() -> Self {
-        Server {}
-    }
-
-    async fn run<F, Fut>(self, handler: F) -> Result<()>
-    where
-        F: Fn(Request) -> Fut + Send + Copy + 'static,
-        Fut: Future<Output = Result<Response>> + Send,
-    {
-        let request = read_request().await?;
-        tokio::spawn(async move {
-            match handler(request).await {
-                Ok(response) => write_response(response).await,
-                Err(e) => println!("error {:?}", e),
-            }
-        });
-        Ok(())
-    }
 }
 
 async fn handle_request(request: Request) -> Result<Response> {
@@ -68,6 +54,28 @@ async fn handle_request_with_timeout_and_content_type(request: Request) -> Resul
     Ok(resp)
 }
 
+impl Server {
+    fn new() -> Self {
+        Server {}
+    }
+
+    async fn run<F, Fut>(self, handler: F) -> Result<()>
+    where
+        F: Fn(Request) -> Fut + Send + Copy + 'static,
+        Fut: Future<Output = Result<Response>> + Send,
+    {
+        let request = read_request().await?;
+        let _ = tokio::spawn(async move {
+            match handler(request).await {
+                Ok(response) => write_response(response).await,
+                Err(e) => println!("error {:?}", e),
+            }
+        })
+        .await;
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -80,7 +88,9 @@ mod tests {
             .unwrap()
             .block_on(async {
                 let server = Server::new();
-                let _result = server.run(handle_request_with_timeout_and_content_type).await;
+                let _result = server
+                    .run(handle_request_with_timeout_and_content_type)
+                    .await;
             });
     }
 }
