@@ -23,7 +23,7 @@ impl Response {
 }
 
 impl SetHeader for Response {
-    fn set_header(&self, header_key: &str, header_value: &str) {}
+    fn set_header(&self, _header_key: &str, _header_value: &str) {}
 }
 
 type Result<T> = core::result::Result<T, anyhow::Error>;
