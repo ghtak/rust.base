@@ -1,3 +1,6 @@
+#![allow(dead_code)]
+#![allow(unused_variables)]
+#![allow(unused_imports)]
 use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};

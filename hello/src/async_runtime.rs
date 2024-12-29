@@ -1,3 +1,6 @@
+#![allow(dead_code)]
+#![allow(unused_variables)]
+#![allow(unused_imports)]
 use futures::future::BoxFuture;
 use futures::task::{waker_ref, ArcWake};
 use futures::{AsyncRead, AsyncReadExt, FutureExt};
@@ -33,12 +36,10 @@ impl Future for TimerFuture {
 
 impl TimerFuture {
     pub fn new(duration: Duration) -> Self {
-        let shared_state = Arc::new(Mutex::new(
-            SharedState {
-                completed: false,
-                waker: None,
-            }
-        ));
+        let shared_state = Arc::new(Mutex::new(SharedState {
+            completed: false,
+            waker: None,
+        }));
 
         let thread_shared_state = shared_state.clone();
         thread::spawn(move || {
@@ -50,12 +51,9 @@ impl TimerFuture {
             }
         });
 
-        TimerFuture {
-            shared_state
-        }
+        TimerFuture { shared_state }
     }
 }
-
 
 struct Executor {
     ready_queue: Receiver<Arc<Task>>,
@@ -82,7 +80,7 @@ struct Spawner {
 }
 
 impl Spawner {
-    fn spawn(&self, future: impl Future<Output=()> + 'static + Send) {
+    fn spawn(&self, future: impl Future<Output = ()> + 'static + Send) {
         let future = future.boxed();
         let task = Arc::new(Task {
             future: Mutex::new(Some(future)),
@@ -111,9 +109,12 @@ fn new_executor_and_spawner() -> (Executor, Spawner) {
 
 struct MyAsyncHandle {}
 
-
 impl AsyncRead for MyAsyncHandle {
-    fn poll_read(self: Pin<&mut Self>, _cx: &mut Context<'_>, _buf: &mut [u8]) -> Poll<io::Result<usize>> {
+    fn poll_read(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+        _buf: &mut [u8],
+    ) -> Poll<io::Result<usize>> {
         println!("MyAsyncHandle::poll_read");
         Poll::Ready(Ok(0))
     }
@@ -142,4 +143,3 @@ mod tests {
         executor.run();
     }
 }
-

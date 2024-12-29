@@ -1,3 +1,6 @@
+#![allow(dead_code)]
+#![allow(unused_variables)]
+#![allow(unused_imports)]
 use std::convert::Infallible;
 use std::net::SocketAddr;
 use tokio::net::TcpListener;

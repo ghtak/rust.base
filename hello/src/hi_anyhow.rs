@@ -1,3 +1,6 @@
+#![allow(dead_code)]
+#![allow(unused_variables)]
+#![allow(unused_imports)]
 use anyhow::{ensure, Context, Result};
 use crate::hi_thiserror::{work_with_io, HiError};
 

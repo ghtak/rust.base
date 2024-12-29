@@ -1,3 +1,6 @@
+#![allow(dead_code)]
+#![allow(unused_variables)]
+#![allow(unused_imports)]
 use std::{future::Future, time::Duration};
 
 struct Server {}
@@ -10,7 +13,7 @@ struct Response {
 }
 
 trait SetHeader {
-    fn set_header(&self, header_key: &str, header_value: &str);
+    fn set_header(&mut self, header_key: &str, header_value: &str);
 }
 
 impl Response {
@@ -23,7 +26,7 @@ impl Response {
 }
 
 impl SetHeader for Response {
-    fn set_header(&self, _header_key: &str, _header_value: &str) {}
+    fn set_header(&mut self, _header_key: &str, _header_value: &str) {}
 }
 
 type Result<T> = core::result::Result<T, anyhow::Error>;
