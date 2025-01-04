@@ -61,8 +61,8 @@ async fn run_server() -> Result<()> {
             let service = ServiceBuilder::new()
                 .layer(TraceLayer::new_for_http())
                 .service_fn(handler);
-            let adapter = TowerAdapter::new(service);
-            //let service = TowerToHyperService::new(service);
+            //let adapter = TowerAdapter::new(service);
+            let adapter = TowerToHyperService::new(service);
             if let Err(err) = http1::Builder::new()
                 .timer(TokioTimer::new())
                 .serve_connection(io, adapter)

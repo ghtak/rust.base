@@ -7,6 +7,7 @@ mod hi_hyper;
 mod hello_tower_0;
 mod hello_tower_service;
 mod hello_tower_http;
+mod hello_pin;
 
 fn main() {
     println!("Hello, world!");
