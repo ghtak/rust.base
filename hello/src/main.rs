@@ -8,6 +8,7 @@ mod hello_tower_0;
 mod hello_tower_service;
 mod hello_tower_http;
 mod hello_pin;
+mod hello_async_trait;
 
 fn main() {
     println!("Hello, world!");
