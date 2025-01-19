@@ -22,11 +22,14 @@ impl<T, U> HelloPin<T, U> {
     }
 }
 
-impl<T,U> Future for HelloPin<T,U> {
+impl<T, U> Future for HelloPin<T, U> {
     type Output = ();
 
-    fn poll(self: Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> std::task::Poll<Self::Output> {
-        let mut this = self.project();
+    fn poll(
+        self: Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Self::Output> {
+        let this = self.project();
         println!("Hello Pin");
         Poll::Ready(())
     }
@@ -49,7 +52,7 @@ mod tests {
                 };
                 hello_pin.await;
             });
-            
+
         // let hello_pin: Pin<&mut HelloPin<_, _>> = unsafe { Pin::new_unchecked(&mut hello_pin) };
         // hello_pin.call();
         // let hello = Pin::new(HelloPin::<String, u32> {
