@@ -1,3 +1,10 @@
 [server]
 port = 3009
 host = "0.0.0.0"
+
+[log]
+env_filter="info,axumbase=debug,axum=debug"
+directory="logs"
+filename_prefix="app.log"
+enable_file=true
+enable_console=true
