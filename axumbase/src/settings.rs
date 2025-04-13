@@ -13,6 +13,12 @@ pub struct ServerSettings {
     pub host: String,
 }
 
+impl ServerSettings {
+    pub fn address(&self) -> String {
+        format!("{}:{}", self.host, self.port)
+    }
+}
+
 #[derive(Debug, Deserialize)]
 pub struct LogSettings {
     pub env_filter: String,
