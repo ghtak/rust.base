@@ -1,8 +1,7 @@
 use crate::app_error::AppError;
 use axum::{
     extract::{rejection::JsonRejection, FromRequest, Request},
-    response::IntoResponse,
-    RequestPartsExt,
+    response::IntoResponse
 };
 use axum::extract::FromRequestParts;
 use axum::http::request::Parts;

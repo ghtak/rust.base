@@ -1,12 +1,17 @@
 mod app_error;
 mod extract_ext;
 mod logging;
-mod settings;
 mod route_sample;
+mod settings;
+mod utoipa_sample;
 
 use crate::logging::init_logging;
 use crate::route_sample::sample_router;
 use crate::settings::load_settings;
+use crate::utoipa_sample::{utoipa_router, ApiDoc};
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
+
 
 #[tokio::main]
 async fn main() {
@@ -15,7 +20,11 @@ async fn main() {
     let listener = tokio::net::TcpListener::bind(settings.server.address().as_str())
         .await
         .unwrap();
-    axum::serve(listener, sample_router()).await.unwrap();
+    let router = sample_router().merge(utoipa_router())
+        .merge(SwaggerUi::new("/docs").url("/api-docs/openapi.json", ApiDoc::openapi()));
+    axum::serve(listener, router)
+        .await
+        .unwrap();
 }
 
 #[cfg(test)]
