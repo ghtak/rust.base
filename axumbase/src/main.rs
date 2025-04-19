@@ -1,22 +1,24 @@
+mod app_context;
 mod app_error;
 mod extract_ext;
 mod logging;
+mod routes;
 mod settings;
-mod route;
 
-use route::router;
+use app_context::AppContext;
+use routes::routes;
+use settings::load_settings;
 
 use crate::logging::init_logging;
-use crate::settings::load_settings;
 
 #[tokio::main]
 async fn main() {
-    let settings = load_settings().unwrap();
-    let _guards = init_logging(&settings.log);
-    let listener = tokio::net::TcpListener::bind(settings.server.address().as_str())
+    let app_context = AppContext::new(load_settings().unwrap());
+    let _guards = init_logging(&app_context.settings.log);
+    let listener = tokio::net::TcpListener::bind(app_context.settings.server.address().as_str())
         .await
         .unwrap();
-    axum::serve(listener, router(&settings.openapi))
+    axum::serve(listener, routes(app_context))
         .await
         .unwrap();
 }

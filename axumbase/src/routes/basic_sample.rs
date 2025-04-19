@@ -1,10 +1,11 @@
+use crate::app_context::AppContext;
 use crate::extract_ext::{Json, Path};
 use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use axum::Router;
 use serde::{Deserialize, Serialize};
 
-pub fn sample_router() -> Router {
+pub fn sample_router(state: AppContext) -> Router {
     Router::new()
         .route(
             "/",
@@ -18,6 +19,7 @@ pub fn sample_router() -> Router {
         )
         .route("/record", post(post_record))
         .route("/record/{key}/{value}", get(get_path))
+        .with_state(state)
 }
 
 #[derive(Debug, Serialize, Deserialize)]

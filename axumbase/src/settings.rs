@@ -1,20 +1,20 @@
 use config::{Config, ConfigError, File};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Settings {
     pub server: ServerSettings,
     pub log: LogSettings,
     pub openapi: OpenApiSettings,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct ServerSettings {
     pub port: u16,
     pub host: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct OpenApiSettings {
     pub enable: bool,
     pub url: String,
@@ -26,7 +26,7 @@ impl ServerSettings {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct LogSettings {
     pub env_filter: String,
     pub directory: String,
@@ -41,7 +41,6 @@ pub fn load_settings() -> Result<Settings, ConfigError> {
         .build()?;
     settings.try_deserialize()
 }
-
 
 #[cfg(test)]
 mod tests {
