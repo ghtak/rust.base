@@ -5,12 +5,19 @@ use serde::Deserialize;
 pub struct Settings {
     pub server: ServerSettings,
     pub log: LogSettings,
+    pub openapi: OpenApiSettings,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct ServerSettings {
     pub port: u16,
     pub host: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct OpenApiSettings {
+    pub enable: bool,
+    pub url: String,
 }
 
 impl ServerSettings {
@@ -33,4 +40,17 @@ pub fn load_settings() -> Result<Settings, ConfigError> {
         .add_source(File::with_name("settings.toml"))
         .build()?;
     settings.try_deserialize()
+}
+
+
+#[cfg(test)]
+mod tests {
+    use crate::settings::load_settings;
+
+    #[test]
+    fn it_works() {
+        let setting = load_settings().unwrap();
+        assert_eq!(setting.server.port, 3009);
+        assert_eq!(setting.server.host, "0.0.0.0");
+    }
 }

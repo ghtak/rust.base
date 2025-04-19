@@ -10,13 +10,9 @@ use utoipa::{OpenApi, ToSchema};
     tags(
         (name="Sample", description="Sample API"),
     ),
-    paths(
-        sample_post
-    ),
-    components(schemas(Sample))
+    paths(sample_post)
 )]
 pub struct ApiDoc;
-
 
 pub fn utoipa_router() -> Router {
     Router::new().route("/sample", post(sample_post))
@@ -28,11 +24,7 @@ struct Sample {
     detail: String,
 }
 
-#[utoipa::path(
-    post,
-    path="/sample",
-    request_body=Sample,
-)]
+#[utoipa::path(post, path="/sample", request_body=Sample)]
 async fn sample_post(Json(sample): Json<Sample>) -> impl IntoResponse {
     Json(sample)
 }

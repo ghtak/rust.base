@@ -8,3 +8,8 @@ directory="logs"
 filename_prefix="app.log"
 enable_file=true
 enable_console=true
+
+
+[openapi]
+enable=true
+url="/docs"
