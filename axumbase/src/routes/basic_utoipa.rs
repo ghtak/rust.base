@@ -1,5 +1,5 @@
 use crate::{app_context::AppContext, extract_ext::Json};
-use axum::routing::{get, post};
+use axum::routing::get;
 use axum::Router;
 use axum::{extract::State, response::IntoResponse};
 use serde::{Deserialize, Serialize};

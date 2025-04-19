@@ -3,13 +3,16 @@ port = 3009
 host = "0.0.0.0"
 
 [log]
-env_filter="info,axumbase=debug,axum=debug"
-directory="logs"
-filename_prefix="app.log"
-enable_file=true
-enable_console=true
-
+env_filter = "info,axumbase=debug,axum=debug"
+directory = "logs"
+filename_prefix = "app.log"
+enable_file = true
+enable_console = true
 
 [openapi]
-enable=true
-url="/docs"
+enable = true
+url = "/docs"
+
+[database]
+url = "sqlite://test.db?mode=rwc"
+max_conn = 8

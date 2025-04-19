@@ -6,6 +6,7 @@ pub struct Settings {
     pub server: ServerSettings,
     pub log: LogSettings,
     pub openapi: OpenApiSettings,
+    pub database: DatabaseSettings,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -35,6 +36,12 @@ pub struct LogSettings {
     pub enable_console: bool,
 }
 
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct DatabaseSettings {
+    pub url: String,
+    pub max_conn: u32,
+}
+
 pub fn load_settings() -> Result<Settings, ConfigError> {
     let settings = Config::builder()
         .add_source(File::with_name("settings.toml"))
@@ -51,5 +58,6 @@ mod tests {
         let setting = load_settings().unwrap();
         assert_eq!(setting.server.port, 3009);
         assert_eq!(setting.server.host, "0.0.0.0");
+        print!("{:?}", setting);
     }
 }
