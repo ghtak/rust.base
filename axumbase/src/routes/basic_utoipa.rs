@@ -33,5 +33,5 @@ async fn sample_post(Json(sample): Json<Sample>) -> impl IntoResponse {
 
 #[utoipa::path(get, path = "/sample")]
 async fn sample_get(State(ctx): State<AppContext>) -> impl IntoResponse {
-    Json(ctx.settings)
+    Json((*ctx.settings).clone())
 }
