@@ -8,7 +8,7 @@ mod settings;
 
 use crate::logging::init_logging;
 use app_context::AppContext;
-use database::DatabasePoolOptions;
+use database::init_database;
 use routes::routes;
 use settings::load_settings;
 use sqlx::Executor;
@@ -17,25 +17,18 @@ use sqlx::Executor;
 async fn main() {
     let settings = load_settings().unwrap();
     let _guards = init_logging(&settings.log);
-    let pool = DatabasePoolOptions::new()
-        .max_connections(settings.database.max_conn)
-        .connect(&settings.database.url)
-        .await
-        .unwrap();
-
-    let app_context = AppContext::new(settings, pool);
-    app_context
-        .database_pool
-        .execute(
-            "CREATE TABLE IF NOT EXISTS users (
+    let pool = init_database(&settings.database).await.unwrap();
+    let app_context = AppContext::new(settings, pool.clone());
+    pool.execute(
+        "CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             email TEXT UNIQUE,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )",
-        )
-        .await
-        .unwrap();
+    )
+    .await
+    .unwrap();
 
     let listener = tokio::net::TcpListener::bind(app_context.settings.server.address().as_str())
         .await

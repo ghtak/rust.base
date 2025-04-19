@@ -1,3 +1,5 @@
+use crate::{app_error::AppError, settings::DatabaseSettings};
+
 
 pub trait DatabaseTrait {
     type Impl;
@@ -30,3 +32,11 @@ pub type Database = PostgresDatabase;
 
 pub type DatabasePool = <Database as DatabaseTrait>::Pool;
 pub type DatabasePoolOptions = <Database as DatabaseTrait>::PoolOptions;
+
+pub async fn init_database(settings: &DatabaseSettings) -> Result<DatabasePool, AppError> {
+    DatabasePoolOptions::new()
+        .max_connections(settings.max_conn)
+        .connect(&settings.url)
+        .await
+        .map_err(|e| AppError::DatabaseError(e.into()))
+}

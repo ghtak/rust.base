@@ -22,6 +22,9 @@ pub enum AppError {
 
     #[error("path error: {0}")]
     PathError(anyhow::Error),
+    
+    #[error("database error: {0}")]
+    DatabaseError(anyhow::Error),
 }
 
 impl IntoResponse for AppError {

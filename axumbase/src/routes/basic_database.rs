@@ -22,17 +22,37 @@ pub fn database_router<S>(state: AppContext) -> Router<S> {
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
-struct Sample {
+struct User {
     name: String,
-    detail: String,
+    mail: String,
 }
 
-#[utoipa::path(post, path="/database", request_body=Sample)]
-async fn database_post(Json(sample): Json<Sample>) -> impl IntoResponse {
-    Json(sample)
+#[utoipa::path(post, path="/database", request_body=User)]
+async fn database_post(
+    State(pool): State<DatabasePool>,
+    Json(user): Json<User>,
+) -> impl IntoResponse {
+    let result = sqlx::query("insert into users(name, email) values($1, $2)")
+        .bind(user.name)
+        .bind(user.mail)
+        .execute(&pool)
+        .await;
+    print!("{:?}", result);
+    return "get";
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema, sqlx::FromRow)]
+struct UserModel {
+    id: u32,
+    name: String,
+    email: String,
 }
 
 #[utoipa::path(get, path = "/database")]
 async fn database_get(State(pool): State<DatabasePool>) -> impl IntoResponse {
-    println!("{:?}", pool);
+    let users: Vec<UserModel> = sqlx::query_as::<_, UserModel>("SELECT id, name, email FROM users")
+        .fetch_all(&pool)
+        .await
+        .unwrap();
+    Json(users)
 }
