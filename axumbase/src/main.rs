@@ -20,22 +20,22 @@ async fn main() {
     let settings = load_settings().unwrap();
     let _guards = init_logging(&settings.log);
     let db_pool = init_database(&settings.database).await.unwrap();
-    let redis_pool = init_redis(&settings.redis).await.unwrap();
-    let app_context = AppContext::new(settings, db_pool.clone(), redis_pool);
     db_pool
         .execute(
             "CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             email TEXT UNIQUE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )",
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
         )
         .await
         .unwrap();
 
-    let listener = tokio::net::TcpListener::bind(app_context.settings.server.address().as_str())
+    let redis_pool = init_redis(&settings.redis).await.unwrap();
+    let listener = tokio::net::TcpListener::bind(settings.server.address().as_str())
         .await
         .unwrap();
-    axum::serve(listener, routes(app_context)).await.unwrap();
+    axum::serve(listener, routes(AppContext::new(db_pool, redis_pool)))
+        .await
+        .unwrap();
 }
