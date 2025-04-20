@@ -35,7 +35,7 @@ pub type DatabasePoolOptions = <Database as DatabaseTrait>::PoolOptions;
 
 pub async fn init_database(settings: &DatabaseSettings) -> Result<DatabasePool, AppError> {
     DatabasePoolOptions::new()
-        .max_connections(settings.max_conn)
+        .max_connections(settings.max_conn as u32)
         .connect(&settings.url)
         .await
         .map_err(|e| AppError::DatabaseError(e.into()))

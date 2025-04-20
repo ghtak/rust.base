@@ -25,6 +25,9 @@ pub enum AppError {
     
     #[error("database error: {0}")]
     DatabaseError(anyhow::Error),
+
+    #[error("redis error: {0}")]
+    RedisError(anyhow::Error),
 }
 
 impl IntoResponse for AppError {

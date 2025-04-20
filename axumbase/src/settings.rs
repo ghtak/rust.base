@@ -7,6 +7,7 @@ pub struct Settings {
     pub log: LogSettings,
     pub openapi: OpenApiSettings,
     pub database: DatabaseSettings,
+    pub redis: RedisSettings,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -39,7 +40,15 @@ pub struct LogSettings {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct DatabaseSettings {
     pub url: String,
-    pub max_conn: u32,
+    pub max_conn: usize,
+}
+
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct RedisSettings {
+    pub url: String,
+    pub max_conn: usize,
+    pub timeout_millis: usize,
 }
 
 pub fn load_settings() -> Result<Settings, ConfigError> {

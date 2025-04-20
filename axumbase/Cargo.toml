@@ -19,6 +19,8 @@ utoipa = { version = "5.3.1", features = ["axum_extras"] }
 utoipauto = "0.2.0"
 utoipa-swagger-ui = { version = "9.0.1", features = ["axum"] }
 sqlx = { version = "0.8.5", features = ["runtime-tokio", "tls-native-tls", "postgres", "sqlite"] }
+deadpool-redis = "0.20.0"
+deadpool = "0.12.2"
 
 [features]
 default = ["sqlite"]

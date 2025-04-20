@@ -3,12 +3,14 @@ mod app_error;
 mod database;
 mod extract_ext;
 mod logging;
+mod redis;
 mod routes;
 mod settings;
 
 use crate::logging::init_logging;
 use app_context::AppContext;
 use database::init_database;
+use redis::init_redis;
 use routes::routes;
 use settings::load_settings;
 use sqlx::Executor;
@@ -17,18 +19,20 @@ use sqlx::Executor;
 async fn main() {
     let settings = load_settings().unwrap();
     let _guards = init_logging(&settings.log);
-    let pool = init_database(&settings.database).await.unwrap();
-    let app_context = AppContext::new(settings, pool.clone());
-    pool.execute(
-        "CREATE TABLE IF NOT EXISTS users (
+    let db_pool = init_database(&settings.database).await.unwrap();
+    let redis_pool = init_redis(&settings.redis).await.unwrap();
+    let app_context = AppContext::new(settings, db_pool.clone(), redis_pool);
+    db_pool
+        .execute(
+            "CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             email TEXT UNIQUE,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )",
-    )
-    .await
-    .unwrap();
+        )
+        .await
+        .unwrap();
 
     let listener = tokio::net::TcpListener::bind(app_context.settings.server.address().as_str())
         .await
